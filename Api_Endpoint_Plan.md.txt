@@ -1,0 +1,33 @@
+# RaceDayDB1 - Section B: API Endpoint Plan
+
+| HTTP Method | Route | Description | Role Required | Request Body | Expected Response |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Authentication** | | | | | |
+| POST | /api/auth/register | Registers a new user as Organiser or Participant and hashes password. | None (public) | `{ firstName, lastName, email, password, role: 'Organiser' or 'Participant' }` | 201 Created - user created with userId. 400 Bad Request - validation failed. 409 Conflict - email already exists. |
+| POST | /api/auth/login | Authenticates user and returns JWT token with role claims. | None (public) | `{ email, password }` | 200 OK - `{ token, role, userId }`. 401 Unauthorized - invalid credentials. |
+| **User Profile** | | | | | |
+| GET | /api/users/me | Returns profile of currently logged-in user. | Any (logged in) | None | 200 OK - user profile. 401 Unauthorized - not logged in. |
+| PUT | /api/users/me | Updates logged-in user's profile (first/last name). | Any (logged in) | `{ firstName, lastName }` | 200 OK - updated profile. 400 Bad Request - validation failed. 401 Unauthorized - not logged in. |
+| **Venues** | | | | | |
+| GET | /api/venues | Returns all venues for event creation and browsing. | None (public) | None | 200 OK - list of venues. |
+| POST | /api/venues | Creates a new venue location. | Organiser | `{ venueName, city, province, capacity }` | 201 Created - venue created. 400 Bad Request - validation failed. 401 Unauthorized - not logged in. 403 Forbidden - not an organiser. |
+| **Events** | | | | | |
+| GET | /api/events | Returns all upcoming events with venue details. | None (public) | None | 200 OK - list of events. |
+| GET | /api/events/{id} | Returns single event with its categories and venue. | None (public) | None | 200 OK - event details. 404 Not Found - event does not exist. |
+| POST | /api/events | Creates a new event linked to organiser and venue. | Organiser | `{ eventName, description, eventDate, venueId }` | 201 Created - event created. 400 Bad Request - validation failed. 401 Unauthorized - not logged in. 403 Forbidden - not an organiser. 404 Not Found - venue does not exist. |
+| PUT | /api/events/{id} | Updates an event owned by the organiser. | Organiser (Owner) | `{ eventName, description, eventDate, venueId }` | 200 OK - updated event. 400 Bad Request - validation failed. 401 Unauthorized - not logged in. 403 Forbidden - not the event owner. 404 Not Found - event does not exist. |
+| DELETE | /api/events/{id} | Deletes an event and cascades categories and enrolments. | Organiser (Owner) | None | 204 No Content - successfully deleted. 401 Unauthorized - not logged in. 403 Forbidden - not the event owner. 404 Not Found - event does not exist. |
+| **Categories** | | | | | |
+| GET | /api/events/{eventId}/categories | Returns all categories (e.g., 10km, 21km) for a specific event. | None (public) | None | 200 OK - list of categories. 404 Not Found - event does not exist. |
+| POST | /api/events/{eventId}/categories | Adds a new race category to an event. | Organiser (Owner) | `{ categoryName, distance, entryFee }` | 201 Created - category created. 400 Bad Request - validation failed. 401 Unauthorized - not logged in. 403 Forbidden - not the event owner. 404 Not Found - event does not exist. |
+| DELETE | /api/categories/{id} | Removes a category from an event. | Organiser (Owner) | None | 204 No Content - successfully deleted. 401 Unauthorized - not logged in. 403 Forbidden - not the event owner. 404 Not Found - category does not exist. |
+| **Event Enrolments** | | | | | |
+| POST | /api/categories/{categoryId}/enrolments | Enrols logged-in participant into a category. | Participant | None (uses JWT userId) | 201 Created - enrolment created with PaymentStatus 'Pending'. 400 Bad Request - category full or event closed. 401 Unauthorized - not logged in. 403 Forbidden - not a participant. 404 Not Found - category does not exist. 409 Conflict - already enrolled in this category. |
+| GET | /api/enrolments/me | Returns all enrolments for logged-in participant. | Participant | None | 200 OK - list of enrolments with event/category details. 401 Unauthorized - not logged in. 403 Forbidden - not a participant. |
+| GET | /api/events/{eventId}/enrolments | Returns all enrolments for an event (organiser dashboard). | Organiser (Owner) | None | 200 OK - list of participants with enrolment status. 401 Unauthorized - not logged in. 403 Forbidden - not the event owner. 404 Not Found - event does not exist. |
+| PUT | /api/enrolments/{id}/payment | Updates payment status (simulated payment). | Participant (Owner) or Organiser | `{ paymentStatus: 'Paid' or 'Cancelled' }` | 200 OK - updated status. 400 Bad Request - invalid status. 401 Unauthorized - not logged in. 403 Forbidden - not the enrolment owner or organiser. 404 Not Found - enrolment does not exist. |
+| DELETE | /api/enrolments/{id} | Cancels own enrolment. | Participant (Owner) | None | 204 No Content - successfully cancelled. 401 Unauthorized - not logged in. 403 Forbidden - not the enrolment owner. 404 Not Found - enrolment does not exist. |
+| **Results** | | | | | |
+| POST | /api/results | Records finish time and position for a confirmed enrolment. | Organiser | `{ enrolmentId, finishTime: 'HH:MM:SS', overallPosition, categoryPosition, raceNumber }` | 201 Created - result recorded. 400 Bad Request - validation failed. 401 Unauthorized - not logged in. 403 Forbidden - not an organiser. 404 Not Found - enrolment does not exist or payment not confirmed. 409 Conflict - result already exists for enrolment. |
+| GET | /api/results/event/{eventId} | Returns leaderboard/results for an event (public results board). | None (public) | None | 200 OK - list of results sorted by position. 404 Not Found - event does not exist or no results yet. |
+| GET | /api/results/me | Returns personal race history for logged-in participant. | Participant | None | 200 OK - list of results with event names and finish times. 401 Unauthorized - not logged in. 403 Forbidden - not a participant. 404 Not Found - no results yet. |
