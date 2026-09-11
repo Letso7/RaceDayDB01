@@ -10,7 +10,7 @@
 7. [Setup and Installation Instructions](#setup-and-installation-instructions)
 8. [Version Control & GitHub Commit Strategy](#version-control--.github-commit-strategy)
 9. [Video Presentation Overview](#video-presentation-overview)
-10. [References & Citations](#references--citations)
+10. [References & Citations](#references--citations).
 
 ---
 
